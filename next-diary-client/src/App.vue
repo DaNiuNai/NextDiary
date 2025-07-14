@@ -1,85 +1,53 @@
-<script setup lang="ts">
-import { RouterLink, RouterView } from 'vue-router'
-import HelloWorld from './components/HelloWorld.vue'
-</script>
-
 <template>
-  <header>
-    <img alt="Vue logo" class="logo" src="@/assets/logo.svg" width="125" height="125" />
-
-    <div class="wrapper">
-      <HelloWorld msg="You did it!" />
-
-      <nav>
-        <RouterLink to="/">Home</RouterLink>
-        <RouterLink to="/about">About</RouterLink>
-      </nav>
-    </div>
-  </header>
-
-  <RouterView />
+  <div class="main-container">
+    <h1 class="title">下一个日记 - Next Diary</h1>
+    <transition name="fade" mode="out-in">
+      <DiaryEditor v-if="currentView === 'editor'" @submitted="handleSubmitted" />
+      <DiaryDisplay v-else-if="receivedDiary" :diary="receivedDiary" @new-exchange="resetToEditor" />
+    </transition>
+  </div>
 </template>
 
+<script setup lang="ts">
+import { ref } from 'vue';
+import DiaryEditor from './components/DiaryEditor.vue';
+import DiaryDisplay from './components/DiaryDisplay.vue';
+import type { Diary } from './types';
+
+const currentView = ref<'editor' | 'display'>('editor');
+const receivedDiary = ref<Diary | null>(null);
+
+const handleSubmitted = (diary: Diary) => {
+  receivedDiary.value = diary;
+  currentView.value = 'display';
+};
+
+const resetToEditor = () => {
+  receivedDiary.value = null;
+  currentView.value = 'editor';
+};
+</script>
+
 <style scoped>
-header {
-  line-height: 1.5;
-  max-height: 100vh;
+.main-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+.title {
+  font-size: 2.5em;
+  color: #303133;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+}
+/* 过渡动画 */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.5s ease;
 }
 
-.logo {
-  display: block;
-  margin: 0 auto 2rem;
-}
-
-nav {
-  width: 100%;
-  font-size: 12px;
-  text-align: center;
-  margin-top: 2rem;
-}
-
-nav a.router-link-exact-active {
-  color: var(--color-text);
-}
-
-nav a.router-link-exact-active:hover {
-  background-color: transparent;
-}
-
-nav a {
-  display: inline-block;
-  padding: 0 1rem;
-  border-left: 1px solid var(--color-border);
-}
-
-nav a:first-of-type {
-  border: 0;
-}
-
-@media (min-width: 1024px) {
-  header {
-    display: flex;
-    place-items: center;
-    padding-right: calc(var(--section-gap) / 2);
-  }
-
-  .logo {
-    margin: 0 2rem 0 0;
-  }
-
-  header .wrapper {
-    display: flex;
-    place-items: flex-start;
-    flex-wrap: wrap;
-  }
-
-  nav {
-    text-align: left;
-    margin-left: -1rem;
-    font-size: 1rem;
-
-    padding: 1rem 0;
-    margin-top: 1rem;
-  }
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 </style>

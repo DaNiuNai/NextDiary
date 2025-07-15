@@ -2,8 +2,10 @@
 import axios from 'axios'
 import type { Diary } from '@/types'
 
+export const baseUrl = 'http://127.0.0.1:8080'
+
 const apiClient = axios.create({
-  baseURL: 'http://127.0.0.1:8000', // 你的 FastAPI 后端地址
+  baseURL: baseUrl, // 你的 FastAPI 后端地址
   headers: {
     'Content-Type': 'application/json',
   },
@@ -32,3 +34,4 @@ export const postComment = async (diaryId: number, author: string, content: stri
   const response = await apiClient.post(`/diaries/${diaryId}/comments/`, { author, content })
   return response.data
 }
+

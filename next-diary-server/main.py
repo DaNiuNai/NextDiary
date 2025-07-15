@@ -1,44 +1,44 @@
-# backend/main.py
 import os
 import secrets
-from typing import List
-from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, Form
-from fastapi.staticfiles import StaticFiles
+
+from fastapi import FastAPI, UploadFile, File, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from sqlmodel import Session, select, func
 
-from database import get_session, create_db_and_tables
-from models import (
-    Diary,
-    DiaryCreate,
-    DiaryRead,
-    DiaryReadWithComments,
-    Comment,
-    CommentCreate,
-    CommentRead,
-)
+from src.core.config import settings
+from src.core.database import create_db_and_tables, get_session
+from src.models.response.diary import DiaryReadWithComments
+from src.models.response.comment import CommentRead
 
-# 创建静态文件目录
-os.makedirs("static/images", exist_ok=True)
+from src.models.request.diary import DiaryCreate
+from src.models.request.comment import CommentCreate
 
-app = FastAPI(title="日记互换 API")
+from src.models.database.mapping import Diary, Comment
+
+
+image_dir_path = os.path.join(settings.RESOURCES_DIR_PATH, "images")
+os.makedirs(image_dir_path, exist_ok=True)
+
+app = FastAPI(title="Next Diary API")
+
 
 # 配置 CORS 中间件，允许前端跨域请求
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # 允许你的 Vue 前端地址
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=["*"],  # 允许的来源列表，"*" 表示允许所有来源
+    allow_credentials=True,  # 允许携带认证信息（cookies, authorization headers等）
+    allow_methods=[
+        "*"
+    ],  # 允许的 HTTP 方法列表，"*" 表示允许所有方法 (GET, POST, OPTIONS等)
+    allow_headers=["*"],  # 允许的请求头部列表，"*" 表示允许所有头部
 )
 
 # 挂载静态文件目录，用于访问上传的图片
-app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount(f"/resources", StaticFiles(directory=settings.RESOURCES_DIR_PATH), name="resources")
 
-
-@app.on_event("startup")
-def on_startup():
-    create_db_and_tables()
+# 创建数据库和表
+create_db_and_tables()
 
 
 @app.post("/upload-image/", summary="上传图片")
@@ -49,13 +49,14 @@ async def upload_image(file: UploadFile = File(...)):
     # 生成一个安全随机的文件名
     file_ext = os.path.splitext(file.filename)[1]
     new_filename = f"{secrets.token_hex(16)}{file_ext}"
-    file_path = f"static/images/{new_filename}"
+    file_path = os.path.join(image_dir_path, new_filename)
 
+    # 写入文件到指定路径
     with open(file_path, "wb") as buffer:
         buffer.write(await file.read())
 
     # 返回图片的 URL
-    return {"url": f"/static/images/{new_filename}"}
+    return {"url": f"/resources/images/{new_filename}"}
 
 
 @app.post("/exchange/", response_model=DiaryReadWithComments, summary="提交日记并交换")
@@ -67,7 +68,7 @@ def exchange_diary(
     2. 从数据库中随机选择一篇别人的日记返回。
     """
     # 1. 创建新日记
-    db_diary = Diary.from_orm(diary_create)
+    db_diary = Diary.model_validate(diary_create)
     session.add(db_diary)
     session.commit()
     session.refresh(db_diary)
@@ -83,10 +84,6 @@ def exchange_diary(
     random_diary = session.exec(
         select(Diary).where(Diary.id != db_diary.id).order_by(func.random()).limit(1)
     ).first()
-
-    if not random_diary:
-        # 理论上，在 total_diaries > 1 的情况下不会发生
-        raise HTTPException(status_code=404, detail="找不到可交换的日记")
 
     return random_diary
 
@@ -104,7 +101,7 @@ def create_comment_for_diary(
     if not diary:
         raise HTTPException(status_code=404, detail="日记不存在")
 
-    db_comment = Comment.from_orm(comment, update={"diary_id": diary_id})
+    db_comment = Comment.model_validate(comment, update={"diary_id": diary_id})
     session.add(db_comment)
     session.commit()
     session.refresh(db_comment)
@@ -114,4 +111,4 @@ def create_comment_for_diary(
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host=settings.HOST, port=settings.PORT)

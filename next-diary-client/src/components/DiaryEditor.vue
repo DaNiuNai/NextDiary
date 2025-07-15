@@ -48,7 +48,7 @@ import { Editor, Toolbar } from '@wangeditor/editor-for-vue'
 import type { IEditorConfig, IToolbarConfig } from '@wangeditor/editor'
 import { ElMessage } from 'element-plus'
 import '@wangeditor/editor/dist/css/style.css'
-import { exchangeDiary, uploadImage } from '@/api'
+import { exchangeDiary, uploadImage, baseUrl } from '@/api'
 import type { Diary } from '@/types'
 
 type InsertFnType = (url: string, alt: string, href: string) => void
@@ -75,7 +75,9 @@ const editorConfig: Partial<IEditorConfig> = {
         try {
           const res = await uploadImage(file)
           // WangEditor 需要完整的 URL
-          const fullUrl = `http://127.0.0.1:8000${res.url}`
+          const fullUrl = `${baseUrl}${res.url}`
+          console.log(fullUrl);
+
           insertFn(fullUrl, file.name, fullUrl)
           ElMessage.success('图片上传成功')
         } catch (error) {

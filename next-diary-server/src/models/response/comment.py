@@ -1,6 +1,7 @@
 from datetime import datetime
 from pydantic import BaseModel
 
+
 class CommentRead(BaseModel):
     id: int
     author: str

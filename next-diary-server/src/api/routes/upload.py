@@ -2,7 +2,6 @@ import os
 import secrets
 
 from fastapi import APIRouter, UploadFile, File
-
 from src.core.config import settings
 
 

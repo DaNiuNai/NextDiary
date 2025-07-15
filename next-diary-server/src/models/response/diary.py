@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from typing import List
 from src.models.response.comment import CommentRead
 
+
 class DiaryReadWithComments(BaseModel):
     id: int
     author: str

@@ -1,5 +1,6 @@
-from pydantic_settings import BaseSettings
 import logging as log
+
+from pydantic_settings import BaseSettings
 
 
 # 配置类

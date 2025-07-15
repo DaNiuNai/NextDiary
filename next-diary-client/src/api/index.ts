@@ -15,7 +15,7 @@ const apiClient = axios.create({
 export const uploadImage = async (file: File): Promise<{ url: string }> => {
   const formData = new FormData()
   formData.append('file', file)
-  const response = await apiClient.post('/upload-image/', formData, {
+  const response = await apiClient.post('/upload/image', formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
@@ -25,13 +25,12 @@ export const uploadImage = async (file: File): Promise<{ url: string }> => {
 
 // 交换日记接口
 export const exchangeDiary = async (author: string, content: string): Promise<Diary> => {
-  const response = await apiClient.post('/exchange/', { author, content })
+  const response = await apiClient.post('/diary/exchange', { author, content })
   return response.data
 }
 
 // 发表评论接口
 export const postComment = async (diaryId: number, author: string, content: string) => {
-  const response = await apiClient.post(`/diaries/${diaryId}/comments/`, { author, content })
+  const response = await apiClient.post(`/diary/add-comments/`, { author, content, diary_id: diaryId })
   return response.data
 }
-
